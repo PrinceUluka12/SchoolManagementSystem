@@ -1,0 +1,64 @@
+version: '3.4'
+networks:
+  my-network:
+    driver: bridge
+
+services:
+  identity:
+    depends_on:
+      - schoolmanagement
+      - rabbitmq
+      - school
+    networks:
+      - my-network
+    image: ${DOCKER_REGISTRY-}identity
+    build:
+      context: .
+      dockerfile: Identity/Dockerfile
+  school:
+    depends_on:
+      - schoolmanagement
+      - rabbitmq
+    networks:
+      - my-network
+    
+    image: ${DOCKER_REGISTRY-}school
+    build:
+      context: .
+      dockerfile: School/Dockerfile
+  
+
+  schoolmanagement:
+    image: mcr.microsoft.com/mssql/server:latest
+    volumes:
+      - my-db:/var/lib/mysql
+    networks:
+      - my-network
+    environment:
+     - SA_PASSWORD=Amarachi1@
+     - MYSQL_DATABASE=master
+     - MYSQL_USER=admin
+     - MYSQL_PASSWORD=root
+     - ACCEPT_EULA=Y
+    ports:
+      - 3306:1433
+  
+
+  rabbitmq:
+    image: "rabbitmq:3.8-management-alpine"  
+    ports:
+      - "5672:5672"  # RabbitMQ default port
+      - "15672:15672"  # RabbitMQ management plugin port
+    networks:
+      - my-network
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "uniquecookie"  # Set a unique cookie for clustering
+      RABBITMQ_DEFAULT_USER: "admin"  # RabbitMQ management plugin username
+      RABBITMQ_DEFAULT_PASS: "admin"  # RabbitMQ management plugin password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq  # Persist RabbitMQ data
+
+
+volumes:
+  rabbitmq_data:
+  my-db:

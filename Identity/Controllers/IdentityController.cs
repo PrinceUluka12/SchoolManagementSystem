@@ -32,7 +32,7 @@ namespace Identity.Controllers
             else
             {
                 _response.Result = errorMessage.Item2;
-                var message = await _authService.AssignRole(model.MatricNo, model.Role.ToUpper());
+                var message = await _authService.AssignRole(model.Username, model.Role.ToUpper());
                 if (!message)
                 {
                     _response.IsSuccess = false;

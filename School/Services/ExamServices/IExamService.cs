@@ -9,6 +9,6 @@ namespace School.Services.ExamSservices
         Task<bool> DeleteExam(int examId);
         Task<Exam> GetExamById(int examId);
         Task<List<Exam>> GetAllExams();
-        Task<List<Exam>> GetExamsForCourse(int courseId);
+        Task<List<Exam>> GetExamsForClass(int courseId);
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using School.Models;
 
 namespace School.Data
@@ -7,7 +9,19 @@ namespace School.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
-
+            //try
+            //{
+            //    var databaseCreator = Database.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
+            //    if (databaseCreator != null)
+            //    {
+            //        if (!databaseCreator.CanConnect()) databaseCreator.Create();
+            //        if (!databaseCreator.HasTables()) databaseCreator.CreateTables();
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine(ex.Message);
+            //}
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -15,17 +29,15 @@ namespace School.Data
                 .HasKey(er => new { er.StudentId, er.ExamId });
 
             modelBuilder.Entity<Student>()
-            .HasOne(s => s.Class)
+            .HasOne(s => s.Courses)
             .WithMany(c => c.Students)
-            .HasForeignKey(s => s.ClassId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(s => s.CourseId)
+            .OnDelete(DeleteBehavior.NoAction);
 
             base.OnModelCreating(modelBuilder);
 
-
-
         }
-        //public DbSet<College> Colleges { get; set; }
+        public DbSet<Class> Classes { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Exam> Exams { get; set; }
         public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
@@ -36,5 +48,7 @@ namespace School.Data
         public DbSet<Question> Questions { get; set; }
         public DbSet<Option> Options { get; set; }
         public DbSet<LeaveOfAbsence> LeaveOfAbsences { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+       
     }
 }

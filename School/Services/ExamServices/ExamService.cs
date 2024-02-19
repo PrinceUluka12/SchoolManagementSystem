@@ -32,18 +32,18 @@ namespace School.Services.ExamSservices
 
         public async  Task<List<Exam>> GetAllExams()
         {
-          return await _db.Exams.ToListAsync(); 
+          return await _db.Exams.Include(e => e.Questions).ThenInclude(q => q.Options).ToListAsync(); 
         }
 
         public async Task<Exam> GetExamById(int examId)
         {
-            var exam = await _db.Exams.Include(e => e.Course).FirstOrDefaultAsync(e => e.ExamId == examId);
+            var exam = await _db.Exams.Include(e => e.Questions).ThenInclude(q => q.Options).FirstOrDefaultAsync(e => e.ExamId == examId);
             return exam;
         }
 
-        public async Task<List<Exam>> GetExamsForCourse(int courseId)
+        public async Task<List<Exam>> GetExamsForClass(int classId)
         {
-           var data = await _db.Exams.Where(e => e.Course.CourseId == courseId).ToListAsync();
+           var data = await _db.Exams.Where(e => e.classes.ClassId == classId).ToListAsync();
             return data;
         }
 

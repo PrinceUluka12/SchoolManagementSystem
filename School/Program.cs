@@ -4,9 +4,11 @@ using Microsoft.OpenApi.Models;
 using School.Data;
 using School.Extensions;
 using School.Services.CourseServices;
+using School.Services.ExamEvaluationServices;
 using School.Services.ExamSservices;
 using School.Services.IdentityService;
 using School.Services.LecturerServices;
+using School.Services.QuestionServices;
 using School.Services.StudentServices;
 using School.Utility;
 
@@ -43,24 +45,26 @@ builder.Services.AddSwaggerGen(options =>
 
 });
 builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
 
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ICourseServices , CoursesServices>();
 builder.Services.AddScoped<IExamService,ExamService>();
 builder.Services.AddScoped<ILecturerService, LecturerService>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
+builder.Services.AddScoped<IExamEvaluationService, ExamEvaluationService>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
+
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<BackendApiAuthenticationHttpClientHandler>();
 builder.Services.AddHttpClient("Identity", u => u.BaseAddress =
 new Uri(builder.Configuration["ServiceUrls:IdentityAPI"])).AddHttpMessageHandler<BackendApiAuthenticationHttpClientHandler>();
-
 builder.AddAppAuthentication();
-
 builder.Services.AddAuthorization();
-
-
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -70,22 +74,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 DatabaseManagement.MigrationIntilization(app);
-app.UseHttpsRedirection();
 
+app.UseHttpsRedirection();
 app.UseAuthorization();
 app.UseAuthorization();
 app.MapControllers();
-ApplyMigration();
 app.Run();
-
-void ApplyMigration()
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var _db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        if (_db.Database.GetPendingMigrations().Count() > 0)
-        {
-            _db.Database.Migrate();
-        }
-    }
-}

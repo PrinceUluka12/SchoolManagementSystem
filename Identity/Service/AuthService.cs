@@ -12,17 +12,19 @@ namespace Identity.Service
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
-        public AuthService(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager, AppDbContext db, IJwtTokenGenerator jwtTokenGenerator)
+        private readonly IEmailService _emailService;
+        public AuthService(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager, AppDbContext db, IJwtTokenGenerator jwtTokenGenerator, IEmailService emailService)
         {
             _roleManager = roleManager;
             _db = db;
             _userManager = userManager;
             _jwtTokenGenerator = jwtTokenGenerator;
+            _emailService = emailService;
         }
 
-        public async Task<bool> AssignRole(string matricNo, string roleName)
+        public async Task<bool> AssignRole(string username, string roleName)
         {
-            var user = _db.ApplicationUsers.FirstOrDefault(u => u.MatricNo.ToLower() == matricNo.ToLower());
+            var user = _db.ApplicationUsers.FirstOrDefault(u => u.UserName.ToLower() == username.ToLower());
             if (user != null)
             {
                 if (!_roleManager.RoleExistsAsync(roleName).GetAwaiter().GetResult())
@@ -77,43 +79,54 @@ namespace Identity.Service
         {
             ApplicationUser user = new()
             {
-                UserName = registrationRequestDTO.MatricNo,
+                UserName = registrationRequestDTO.Username,
                 Email = registrationRequestDTO.Email,
                 NormalizedEmail = registrationRequestDTO.Email.ToUpper(),
                 FirstName = registrationRequestDTO.FirstName,
-                LastName = registrationRequestDTO.LastName, 
-                MatricNo = registrationRequestDTO.MatricNo,
+                LastName = registrationRequestDTO.LastName
             };
 
             try
             {
-                var result = await _userManager.CreateAsync(user, registrationRequestDTO.Password);
-
-                if (result.Succeeded)
+                var usernameExists = await _userManager.FindByNameAsync(registrationRequestDTO.Username) != null;
+                if (usernameExists)
                 {
-                    var userToReturn = _db.ApplicationUsers.First(u => u.UserName == registrationRequestDTO.MatricNo);
-                    StudentDto userDTO = new()
-                    {
-                        Email = userToReturn.Email,
-                        ID = userToReturn.Id,
-                        FirstName = userToReturn.FirstName,
-                        LastName = userToReturn.LastName,
-                        MatricNo =  userToReturn.MatricNo
-                    };
-
-                    return ("", userDTO);
+                    return ("Username is already taken.",new StudentDto());
                 }
                 else
                 {
-                    return (result.Errors.FirstOrDefault().Description, new StudentDto());
+                    var result = await _userManager.CreateAsync(user, registrationRequestDTO.Password);
+
+                    if (result.Succeeded)
+                    {
+                        var userToReturn = _db.ApplicationUsers.First(u => u.UserName == registrationRequestDTO.Username);
+                        StudentDto userDTO = new()
+                        {
+                            Email = userToReturn.Email,
+                            ID = userToReturn.Id,
+                            FirstName = userToReturn.FirstName,
+                            LastName = userToReturn.LastName,
+                            MatricNo = userToReturn.UserName
+                        };
+
+                        return ("", userDTO);
+                    }
+                    else
+                    {
+                        return (result.Errors.FirstOrDefault().Description, new StudentDto());
+                    }
                 }
+                
             }
             catch (Exception ex)
             {
                 string msg = ex.Message;
+                return (ex.Message, new StudentDto());
             }
             return ("Error Encountered", new StudentDto());
         }
+
+        
     }
     
 }

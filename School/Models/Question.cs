@@ -4,15 +4,16 @@
     {
         public int QuestionId { get; set; }
         public string QuestionText { get; set; }
-
-        // Navigation property - a question belongs to an exam
+        public QuestionType Type { get; set; }
         public int ExamId { get; set; }
         public Exam Exam { get; set; }
-
-        // Navigation property - a question has multiple options
         public List<Option> Options { get; set; } = new List<Option>();
+        public List<Answer> Answers { get; set; } = new List<Answer>();
+    }
 
-        // ID of the correct option
-        public int CorrectOptionId { get; set; }
+    public enum QuestionType
+    {
+        SingleChoice,
+        MultipleChoice,
     }
 }

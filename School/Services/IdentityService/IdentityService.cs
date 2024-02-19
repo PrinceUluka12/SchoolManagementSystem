@@ -29,20 +29,34 @@ namespace School.Services.IdentityService
             return new LoginResponseDTO();
         }
 
-        public async Task<StudentDto> Register(RegistrationRequestDTO model)
+        public async Task<ResponseDto> Register(RegistrationRequestDTO model)
         {
-            var jsonContent = JsonConvert.SerializeObject(model);
-            var stringContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-            var client = _httpClientFactory.CreateClient("Identity");
-            var response = await client.PostAsync($"/api/identity/register", stringContent);
-            var apiContent = await response.Content.ReadAsStringAsync();
-            var resp = JsonConvert.DeserializeObject<ResponseDto>(apiContent);
-            if (resp.IsSuccess)
+            try
             {
-                return JsonConvert.DeserializeObject<StudentDto>(Convert.ToString(resp.Result));
+                var jsonContent = JsonConvert.SerializeObject(model);
+                var stringContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                var client = _httpClientFactory.CreateClient("Identity");
+                var response = await client.PostAsync($"/api/identity/register", stringContent);
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiContent = await response.Content.ReadAsStringAsync();
+                    var resp = JsonConvert.DeserializeObject<ResponseDto>(apiContent);
+                    return resp;
+                }
+                else
+                {
+                    return new ResponseDto() { IsSuccess = false, Message = "Identity Api Server Error"};
+                }
+               
             }
-            return new StudentDto();
+            catch (Exception ex)
+            {
+
+                return new ResponseDto() { IsSuccess = false, Message ="Identity Api Server Error   -" + ex.Message };
+            }
+
+            
         }
     }
 }

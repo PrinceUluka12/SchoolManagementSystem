@@ -29,7 +29,7 @@ namespace School.Services.StudentServices
                 MiddleName = student.LastName,
                 LastName = student.LastName,
                 DateOfBirth = student.DateOfBirth,
-                ClassId = student.ClassId,
+                CourseId = student.CourseId,
                 MatricNo = GenerateRandomNumber()
             };
             await _db.Students.AddAsync(newStudent);
@@ -39,15 +39,23 @@ namespace School.Services.StudentServices
             {
                 FirstName = newStudent.FirstName,
                 LastName = newStudent.LastName,
-                MatricNo = newStudent.MatricNo,
+                Username = newStudent.MatricNo,
                 Password = GeneratePassword(newStudent.LastName, newStudent.MatricNo) + "@",
                 Email = newStudent.FirstName + "." + newStudent.LastName + "@gmail.com"
                
             };
-            var loginReg = await _identity.Register(registration);
+            var studentReg = await _identity.Register(registration);
+            if (studentReg.IsSuccess)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            
 
-
-            return true;
+          
         }
 
         public async Task<double> CalculateGPA(int StudentId)
@@ -62,7 +70,7 @@ namespace School.Services.StudentServices
                 foreach (var result in examResults)
                 {
                     var gradeValue = gradeValues[(int)result.Grade];
-                    var courseCredits = result.Exam.Course.Credits; 
+                    var courseCredits = result.Exam.classes.Credits; 
 
                     totalPoints += gradeValue * courseCredits;
                     totalCredits += courseCredits;
@@ -81,11 +89,11 @@ namespace School.Services.StudentServices
             try
             {
                 var student  = await _db.Students.Include(s => s.Courses).FirstOrDefaultAsync(s => s.StudentId == StudentId);
-                var courseData = await _db.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
+                var classData = await _db.Classes.FirstOrDefaultAsync(c => c.CourseId == courseId);
 
-                if (student != null && courseData != null)
+                if (student != null && classData != null)
                 {
-                    student.Courses.Add(courseData);
+                    student.Classes.Add(classData);
                     await _db.SaveChangesAsync();
                     return true;
                 }
@@ -103,7 +111,7 @@ namespace School.Services.StudentServices
 
         public async Task<string> GenerateTranscript(int studentId)
         {
-            var studentWithCourses = await _db.Students.Include(s => s.Courses)
+            var studentWithCourses = await _db.Students.Include(s => s.Classes)
                 .ThenInclude(c => c.Exams)
                 .ThenInclude(e => e.Results)
                 .ThenInclude(r => r.Exam)
@@ -115,10 +123,10 @@ namespace School.Services.StudentServices
             else
             {
                 var transcript  = $"Transcript for {studentWithCourses.FirstName}    {studentWithCourses.LastName}\n\n";
-                foreach (var course in studentWithCourses.Courses)
+                foreach (var data in studentWithCourses.Classes)
                 {
-                    transcript += $"Course: {course.CourseName}\n";
-                    foreach (var result in course.Exams.SelectMany(e => e.Results.Where(r => r.Student.StudentId == studentId)))
+                    transcript += $"Course: {data.ClassName}\n";
+                    foreach (var result in data.Exams.SelectMany(e => e.Results.Where(r => r.Student.StudentId == studentId)))
                     {
                         transcript += $"  Exam: {result.Exam.ExamName}, Grade: {result.Grade}\n";
                     }
@@ -144,25 +152,25 @@ namespace School.Services.StudentServices
 
         }
 
-        public async Task<List<Course>> GetClassSchedule(int StudentId)
+        public async Task<List<Class>> GetClassSchedule(int StudentId)
         {
-            var student = await _db.Students.Include(s => s.Class).ThenInclude(c => c.Courses).FirstOrDefaultAsync(s => s.StudentId == StudentId);
-            return student?.Class?.Courses;
+            var student = await _db.Students.Include(s => s.Courses).ThenInclude(c => c.Classes).FirstOrDefaultAsync(s => s.StudentId == StudentId);
+            return student?.Courses?.Classes;
         }
 
-        public async Task<List<Course>> GetEnrolledCourses(int StudentId)
+        public async Task<List<Class>> GetEnrolledClass(int StudentId)
         {
             try
             {
                 var  student = await _db.Students.Include(s => s.Courses).FirstOrDefaultAsync(s => s.StudentId == StudentId);
                 if (student != null)
                 {
-                    List<Course> enrolledCourses = student.Courses;
+                    List<Class> enrolledCourses = student.Classes;
                     return enrolledCourses;
                 }
                 else
                 {
-                    return new List<Course>();
+                    return new List<Class>();
                 }
 
             }
@@ -192,7 +200,7 @@ namespace School.Services.StudentServices
             try
             {
                 var result  =  await _db.Students.Where(s => s.StudentId == studentId)
-                    .SelectMany(s => s.Courses)
+                    .SelectMany(s => s.Classes)
                     .SelectMany(c => c.Exams)
                     .SelectMany(e => e.Results)
                     .ToListAsync();

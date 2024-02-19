@@ -14,8 +14,8 @@ namespace School.Services.StudentServices
         Task<Grade> GetExamGrade(int examId, int StudentId);
         Task<List<ExamResult>> GetExamResults(int StudentId);
         Task<Student> GetStudentInformation(int StudentId);
-        Task<List<Course>> GetEnrolledCourses(int StudentId);
-        Task<List<Course>> GetClassSchedule(int StudentId);
+        Task<List<Class>> GetEnrolledClass(int StudentId);
+        Task<List<Class>> GetClassSchedule(int StudentId);
         Task<Dictionary<DateTime, bool>> GetAttendanceReport(int studentId);
         Task<string> GenerateTranscript(int studentId);
 

@@ -9,17 +9,20 @@ using School.Services.StudentServices;
 
 namespace School.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/student")]
     [ApiController]
     public class StudentController : ControllerBase
     {
         private readonly IStudentService _service;
+        protected ResponseDto _response;
 
         public StudentController(IStudentService service)
         {
             _service = service;
+            _response = new ResponseDto();
         }
-        [HttpGet]
+        [HttpGet("GetAllStudents")]
+        //[Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> GetAllStudents()
         {
             try
@@ -32,8 +35,8 @@ namespace School.Controllers
                 return Ok(ex);
             }
         }
-        [HttpPost]
-        [Authorize(Roles = "STUDENT")]
+        [HttpPost("AddStudent")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> AddStudent(AddStudentDTO student)
         {
             if (!ModelState.IsValid)
@@ -50,6 +53,29 @@ namespace School.Controllers
                 return Ok(ex);
             }
 
+        }
+
+        [HttpPost("EnrollInCourse")]
+        //[Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> EnrollInCourse(int courseId, int StudentId)
+        {
+            try
+            {
+                var resp = await _service.EnrollInCourse(courseId, StudentId);
+                if (resp)
+                {
+                    return Ok(_response);
+                }
+                _response.Message = "AN ERROR OCCURED";
+                _response.IsSuccess = false;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.Message = ex.Message;
+                _response.IsSuccess = false;
+                return Ok(_response);
+            }
         }
 
 
